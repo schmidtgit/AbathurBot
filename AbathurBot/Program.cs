@@ -37,7 +37,7 @@ namespace Launcher {
         /// </summary>
         /// <param name="args">First argument will be used as datapath, second as logpath</param>
         static void Main(string[] args) {
-            Console.Title = $"Abathur Framework Launcher v{Version}";
+            Console.Title = $"Abathur Framework v{AbathurVersion} and NydusNetwork v{NydusNetworkVersion}";
             var dataPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory() + "\\data\\";
             var logPath = args.Length > 1 ? args[0] : Directory.GetCurrentDirectory() + "\\log\\";
             new Program().Run(dataPath, logPath);
