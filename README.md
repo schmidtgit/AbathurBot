@@ -3,6 +3,8 @@ AbathurBot allows you to write your own AI using the [Abathur Framework](https:/
 Clone, compile and run. The launcher should handle the rest and run a demo.
 See [AdequateSource.com](http://adequatesource.com/abathur) for details.
 
+*Part of a bachelor thesis! Please fill out this [questionnaire](https://goo.gl/forms/1Z6AHqIQzgo0ZxtK2) regarding SC2 AIs*
+
 ## Launching for the first time!
     - A directory for settings and cached data (/data) will be created at the current path
     - A directory for log files will be created (/log)
