@@ -13,14 +13,12 @@ namespace Launcher.Modules.Examples {
     // ZergDemo inherits IReplaceableModule and is therefore accessible in IoC container and can be swapped at runtime.
     public class ZergDemo : IReplaceableModule {
         private IEnumerable<IColony> _eStarts;
-        private IGameMap _map;
         private bool _done;
         private readonly IIntelManager _intelManager;
         private readonly ICombatManager _combatManager;
         private readonly IProductionManager _productionManager;
         private ISquadRepository _squadRep;
         private Squad _theGang;
-        private Squad _refineries;
         private bool _startCalled;
 
         // Take required managers in the constructor, see FullModule for all possible managers.
@@ -76,6 +74,7 @@ namespace Launcher.Modules.Examples {
 
         public void OnRestart() {
             _startCalled = false;
+            _done = false;
         }
 
         public void OnAdded() {
@@ -89,6 +88,7 @@ namespace Launcher.Modules.Examples {
 
         public void OnRemoved() {
             _startCalled = false;
+            _done = false;
         }
         
         // Called by IntelManager, adds everything - expect overloads - to the Squad
