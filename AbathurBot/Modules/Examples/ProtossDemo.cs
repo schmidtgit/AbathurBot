@@ -81,6 +81,8 @@ namespace Launcher.Modules.Examples {
 
         public void OnRestart() {
             _startCalled = false;
+            _immortalCreated = false;
+            _done = false;
         }
 
         public void OnAdded() {
@@ -90,6 +92,8 @@ namespace Launcher.Modules.Examples {
         public void OnRemoved() {
             _intelManager.Handler.DeregisterHandler(HandleUnitMade);
             _startCalled = false;
+            _immortalCreated = false;
+            _done = false;
         }
 
         public void Queue1ImmortalRush()
