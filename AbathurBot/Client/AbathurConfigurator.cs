@@ -113,12 +113,15 @@ namespace Launcher.Client {
                     log?.LogSuccess($"\tLauncher: {launchString} resolved to a valid class.");
 #endif
                 } else {
+                    log?.LogError($"\tLauncher: Could not resolve {launchString} to a valid class."); // Python not supported yet.
+                    /*
                     // Assume the file mentioned in the setup file is a command for setting up an external module
                     collection.AddSingleton<IModule, ExternalModule>();
                     externalStrings.Enqueue(launchString);
 #if DEBUG
                     log?.LogWarning($"\tLauncher: [EXTERNAL] {launchString}");
 #endif
+                    */
                 }
             }
 
