@@ -80,15 +80,17 @@ namespace Launcher.Services {
             if(r.CreateGame.Error == ResponseCreateGame.Types.Error.Unset)
                 log?.LogSuccess($"\tSuccessfully created game with {gameSettings.GameMap}");
             else {
-                log?.LogWarning($"\tFailed with {r.JoinGame.Error} on {gameSettings.GameMap}.");
+                log?.LogWarning($"\tFailed with {r.CreateGame?.Error} on {gameSettings.GameMap}.");
                 if(!gc.TryWaitAvailableMapsRequest(out r,TIMEOUT))
                     TerminateWithMessage("Failed to fetch available maps",log);
                 else
-                    gameSettings.GameMap = r.AvailableMaps.BattlenetMapNames.First();
+                    gameSettings.GameMap = r.AvailableMaps.LocalMapPaths.First();
                 if(!gc.TryWaitCreateGameRequest(out r,TIMEOUT))
                     TerminateWithMessage("Failed to create game",log);
-                if(r.JoinGame.Error == ResponseJoinGame.Types.Error.Unset)
+                if(r.CreateGame.Error == ResponseCreateGame.Types.Error.Unset)
                     log?.LogSuccess($"\tSuccessfully created game with {gameSettings.GameMap}");
+                else
+                    TerminateWithMessage($"\tFailed with {r.CreateGame?.Error} on {gameSettings.GameMap}",log);
             }
 
             if(!gc.TryWaitJoinGameRequest(out r,TIMEOUT))
