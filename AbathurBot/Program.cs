@@ -79,9 +79,12 @@ namespace Launcher {
             // Check if gamesettings specify more than one participant (1 = Participant, 2 = Computer, 3 = Observer (not implemented))
             IClient player1 = null;
             IClient player2 = null;
-            player1 = new AbathurClient(abathurSetup,gameSettings,essence,log);
-            if(gameSettings.IsMultiplayer())
-                player2 = new HumanClient(gameSettings,log:ConsoleLogger.Instance);
+            if(gameSettings.IsMultiplayer()) {
+                player1 = new HumanClient(gameSettings,log: ConsoleLogger.Instance);
+                player2 = new AbathurClient(abathurSetup,gameSettings,essence,log);
+            } else {
+                player1 = new AbathurClient(abathurSetup,gameSettings,essence,log);
+            }
 
             // Start the game already!
             var game = new Game(gameSettings,player1,player2);
