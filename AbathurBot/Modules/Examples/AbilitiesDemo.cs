@@ -3,9 +3,9 @@ using System.Linq;
 using Abathur.Constants;
 using Abathur.Core;
 using Abathur.Core.Combat;
+using Abathur.Extensions;
 using Abathur.Model;
 using Abathur.Modules;
-using Abathur.Modules.Services;
 using Abathur.Repositories;
 
 namespace Launcher.Modules.Examples {
@@ -36,10 +36,24 @@ namespace Launcher.Modules.Examples {
             // Register a handler to be called when a new unit friendly is added
             _intelManager.Handler.RegisterHandler(Case.UnitAddedSelf,HandleUnitMade);
 
-            // Produce some units with abilities
-            for (int i = 0; i < 5; i++)
+            for(int i = 0; i < 7; i++)
                 // Create pylons with spacing to ensure we have enough space to build.
-                _productionManager.QueueUnit(BlizzardConstants.Unit.Pylon, spacing:3);
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Probe,spacing: 3);
+
+            for(int i = 0; i < 2; i++)
+                // Create pylons with spacing to ensure we have enough space to build.
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Assimilator);
+
+            // Produce some units with abilities
+            for(int i = 0; i < 5; i++)
+                // Create pylons with spacing to ensure we have enough space to build.
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Pylon,spacing: 3);
+
+            for(int i = 0; i < 3; i++)
+                // Create pylons with spacing to ensure we have enough space to build.
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Stargate,spacing: 3);
+
+
             for (int i = 0; i < 10; i++)
                 _productionManager.QueueUnit(BlizzardConstants.Unit.Probe, lowPriority:true);
 
@@ -56,8 +70,8 @@ namespace Launcher.Modules.Examples {
             _productionManager.QueueUnit(BlizzardConstants.Unit.Sentry);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Sentry);
 
-            _productionManager.QueueUnit(BlizzardConstants.Unit.Phoenix);
-            _productionManager.QueueUnit(BlizzardConstants.Unit.Phoenix);
+            for(int i = 0; i < 10; i++)
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Phoenix);
 
             // Create a squad to control your units as one unit
             theGang = _squadRep.Create("TheGang");
@@ -75,11 +89,11 @@ namespace Launcher.Modules.Examples {
             if (_done) { // Once the attack has begun
                 foreach(var gangUnit in theGang.Units) {
                     // Find the enemys closest base using straight line distance
-                    var point = _eStarts.OrderBy(c => MathServices.EuclidianDistance(gangUnit.Point,c.Point)).First().Point;
+                    var point = _eStarts.OrderBy(c => MathExtensions.EuclidianDistance(gangUnit.Point,c.Point)).First().Point;
 
                     // Ïf the adepts are close enough to phase walk to the middle of the base, do it.
                     if(gangUnit.UnitType == BlizzardConstants.Unit.Adept) { 
-                        if(MathServices.EuclidianDistance(gangUnit.Point,point) < 35 && MathServices.EuclidianDistance(gangUnit.Point,point) > 5)
+                        if(MathExtensions.EuclidianDistance(gangUnit.Point,point) < 35 && MathExtensions.EuclidianDistance(gangUnit.Point,point) > 5)
                             _combatManager.UsePointCenteredAbility(BlizzardConstants.Ability.AdeptPhaseShift, gangUnit.Tag, point);
                     } else if(gangUnit.UnitType == BlizzardConstants.Unit.Phoenix &&
                               !_intelManager.UnitsEnemyVisible.Any(u => u.BuffIds.Contains(BlizzardConstants.Buffs.GravitonBeam))) {
@@ -91,12 +105,12 @@ namespace Launcher.Modules.Examples {
                         }
                     } else if(gangUnit.UnitType == BlizzardConstants.Unit.Sentry) {
                         // If there are any visible enemies close
-                        if(_intelManager.UnitsEnemyVisible.Any(e => MathServices.EuclidianDistance(e.Point,gangUnit.Point) < 15)) {
+                        if(_intelManager.UnitsEnemyVisible.Any(e => MathExtensions.EuclidianDistance(e.Point,gangUnit.Point) < 15)) {
                             // Use guardian shield
                             _combatManager.UseTargetlessAbility(BlizzardConstants.Ability.GuardianShield,gangUnit.Tag);
                         }
                     }
-                    if (!gangUnit.Orders.Any() && MathServices.EuclidianDistance(gangUnit.Point,point) > 5) // If the unit is doing nothing and is not standing on a base
+                    if (!gangUnit.Orders.Any() && MathExtensions.EuclidianDistance(gangUnit.Point,point) > 5) // If the unit is doing nothing and is not standing on a base
                         foreach(var colony in _eStarts) // Queue an attack move command on each enemy starting location
                             _combatManager.AttackMove(theGang,colony.Point,true);
                 }

@@ -1,4 +1,5 @@
 ﻿using Abathur;
+using Abathur.Factory;
 using Launcher.Settings;
 using NydusNetwork.API.Protocol;
 using NydusNetwork.Logging;
@@ -34,8 +35,8 @@ namespace Launcher.Client {
 
         /// <inheritdoc />
         public void Initialize() {
-            // The Abathur framework utilize a IoC container to get an instance of all imodules referenced in the setup file
-            abathur = AbathurConfigurator.Configure(essence,gameSettings,setupSettings,log);
+            var factory = new AbathurFactory(log);
+            abathur = factory.Create(gameSettings,essence,log,this.GetType().Assembly, setupSettings.Modules.ToArray());
             abathur.IsHosting = isHost;
             abathur.Initialize();
         }

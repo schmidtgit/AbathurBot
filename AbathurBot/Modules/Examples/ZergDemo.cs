@@ -137,7 +137,7 @@ namespace Launcher.Modules.Examples {
             if (HQ == null) return;
 
             // Count refineries
-            var refineries = col.Structures.Count(u => u.UnitType == GameConstants.RaceRefinery && u.Alliance == Alliance.Self);
+            var refineries = col.Structures.Count(u => GameConstants.IsRefinery(u.UnitType) && u.Alliance == Alliance.Self);
 
             // Calculate effective workers
             var effectiveWorkers = col.Workers.Count + _intelManager.ProductionQueue.Count(u => u.UnitId == BlizzardConstants.Unit.Drone);

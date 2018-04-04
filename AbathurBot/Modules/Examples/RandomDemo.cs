@@ -1,5 +1,5 @@
 ﻿using Abathur;
-using Abathur.Constants;
+using Abathur.Core;
 using Abathur.Modules;
 
 namespace Launcher.Modules.Examples {
@@ -7,17 +7,19 @@ namespace Launcher.Modules.Examples {
     // It showcase how IReplacebleModules can be used to swap modules at runtime.
     class RandomDemo : IReplaceableModule {
         private IAbathur _abathur;
+        private IIntelManager _intel;
         private ZergDemo _zergModule;
         private TerranDemo _terranModule;
         private ProtossDemo _protossModule;
         private bool _added;
 
         // Everything inheriting from IReplaceableModule is added to the IOC and can be dependency injected.
-        public RandomDemo(IAbathur abathur, TerranDemo terranModule, ProtossDemo protossModule, ZergDemo zergModule) {
+        public RandomDemo(IAbathur abathur, IIntelManager intel, TerranDemo terranModule, ProtossDemo protossModule, ZergDemo zergModule) {
             _terranModule = terranModule;
             _protossModule = protossModule;
             _zergModule = zergModule;
             _abathur = abathur;
+            _intel = intel;
         }
 
         // Race might be marked as random on initialize, wait for OnStart()
@@ -25,7 +27,7 @@ namespace Launcher.Modules.Examples {
 
         // Detect the race on initialize and add the correct module
         public void OnStart() {
-            switch(GameConstants.ParticipantRace) {
+            switch(_intel.ParticipantRace) {
                 case NydusNetwork.API.Protocol.Race.NoRace:
                     break;
                 case NydusNetwork.API.Protocol.Race.Terran:
@@ -45,36 +47,18 @@ namespace Launcher.Modules.Examples {
             }
         }
 
-        public void OnStep(){}
+        public void OnStep() {
+            if(!_added)
+                OnStart();
+        }
 
         public void OnGameEnded(){}
 
         // Remember to clean after ourself...
-        public void OnRestart() {
-            switch(GameConstants.ParticipantRace) {
-                case NydusNetwork.API.Protocol.Race.NoRace:
-                    break;
-                case NydusNetwork.API.Protocol.Race.Terran:
-                    _abathur.RemoveFromGameloop(_terranModule);
-                    _added = true;
-                    break;
-                case NydusNetwork.API.Protocol.Race.Zerg:
-                    _abathur.RemoveFromGameloop(_zergModule);
-                    _added = true;
-                    break;
-                case NydusNetwork.API.Protocol.Race.Protoss:
-                    _abathur.RemoveFromGameloop(_protossModule);
-                    _added = true;
-                    break;
-                case NydusNetwork.API.Protocol.Race.Random:
-                    break;
-            }
-        }
+        public void OnRestart() => _added = false;
 
         // This module inherits from IReplacebleModule too!
-        public void OnAdded(){
-            OnStart();
-        }
+        public void OnAdded() => OnStart();
 
         public void OnRemoved() => OnRestart();
     }
