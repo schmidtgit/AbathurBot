@@ -81,7 +81,7 @@ namespace Launcher {
             IClient player2 = null;
             player1 = new AbathurClient(abathurSetup,gameSettings,essence,log);
             if(gameSettings.IsMultiplayer())
-                player2 = new HumanClient(gameSettings,log:ConsoleLogger.Instance);
+                player2 = new AbathurClient(abathurSetup,gameSettings,essence,log);
 
             // Start the game already!
             var game = new Game(gameSettings,player1,player2);

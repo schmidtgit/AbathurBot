@@ -32,7 +32,7 @@ namespace Launcher.Modules.Examples {
         public void OnStart() {
             if (_startCalled) return;
             _eStarts = _intelManager.Colonies.Where(c => c.IsStartingLocation);
-            Queue1ImmortalRush();
+            QueueImmortalRush();
             _intelManager.Handler.RegisterHandler(Case.UnitAddedSelf,HandleUnitMade);
             theGang = _squadRep.Create("TheGang");
             _startCalled = true;
@@ -52,6 +52,15 @@ namespace Launcher.Modules.Examples {
             {
                 _intelManager.Handler.DeregisterHandler(HandleUnitMade);
                 _done = false;
+            }
+
+            if(!_intelManager.ProductionQueue.Any()) {
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Immortal);
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Stalker);
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Stalker);
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Stalker);
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Stalker);
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Stalker);
             }
         }
 
@@ -76,8 +85,7 @@ namespace Launcher.Modules.Examples {
                 }
             }
         }
-        public void OnGameEnded() {
-        }
+        public void OnGameEnded() {}
 
         public void OnRestart() {
             _startCalled = false;
@@ -96,7 +104,7 @@ namespace Launcher.Modules.Examples {
             _done = false;
         }
 
-        public void Queue1ImmortalRush()
+        public void QueueImmortalRush()
         {
             _productionManager.QueueUnit(BlizzardConstants.Unit.Probe,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Probe,lowPriority: false);
@@ -113,7 +121,6 @@ namespace Launcher.Modules.Examples {
             _productionManager.QueueUnit(BlizzardConstants.Unit.Assimilator, lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Gateway,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.RoboticsFacility,lowPriority: false);
-            _productionManager.QueueTech(BlizzardConstants.Research.WarpGate);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Pylon,lowPriority: false,spacing: 3);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Sentry,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Gateway,lowPriority: false);
@@ -130,8 +137,6 @@ namespace Launcher.Modules.Examples {
             _productionManager.QueueUnit(BlizzardConstants.Unit.Immortal,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Stalker,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Stalker,lowPriority: false);
-            ;
-
         }
     }
 }

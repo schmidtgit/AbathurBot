@@ -6,7 +6,7 @@ using Abathur.Core.Combat;
 using Abathur.Model;
 using Abathur.Modules;
 using Abathur.Repositories;
-using NydusNetwork.API.Protocol;
+using NydusNetwork.Model;
 
 namespace Launcher.Modules.Examples {
     // This demo runs best with the "AutoHarvestGather" module in the setup.json file!
@@ -20,25 +20,29 @@ namespace Launcher.Modules.Examples {
         private ISquadRepository _squadRep;
         private Squad _theGang;
         private bool _startCalled;
+        private GameSettings _gameSettings;
 
         // Take required managers in the constructor, see FullModule for all possible managers.
-        public ZergDemo(IIntelManager intelManager,ICombatManager combatManager,IProductionManager productionManager,ISquadRepository squadRepo) {
+        public ZergDemo(IIntelManager intelManager,ICombatManager combatManager,IProductionManager productionManager,ISquadRepository squadRepo,GameSettings gamsettings) {
             _intelManager = intelManager;
             _combatManager = combatManager;
             _productionManager = productionManager;
             _squadRep = squadRepo;
+            _gameSettings = gamsettings;
         }
 
         public void Initialize() { }
-        
+
         public void OnStart() {
-            if (_startCalled) return;
+            if(_startCalled)
+                return;
+            _productionManager.ClearBuildOrder();
 
             // Colonies marked with Starting location are possible starting locations of the enemy NOT yourself
             _eStarts = _intelManager.Colonies.Where(c => c.IsStartingLocation);
 
             // Queue a hardcoded all-in
-            QueueOneBaseRavager(); 
+            QueueOneBaseRavager();
 
             // Using the AutoHarvestGather module DesiredVespeneWorkers decides how many workers will be assigned to gather vespene 
             // Without AutoHarvestGather in the setup.json file (or and alternative) this has no effect
@@ -49,25 +53,29 @@ namespace Launcher.Modules.Examples {
 
             // The _intelManager.Handler allows for actions to be carried out when specific events happens.
             // Registering a handler to a Case means the handler will be called every time the event happens.
-            _intelManager.Handler.RegisterHandler(Case.UnitAddedSelf, UnitMadeHandler);
-            _intelManager.Handler.RegisterHandler(Case.StructureAddedSelf, s => {
-                if (s.UnitType == BlizzardConstants.Unit.RoachWarren)
+            _intelManager.Handler.RegisterHandler(Case.UnitAddedSelf,UnitMadeHandler);
+            _intelManager.Handler.RegisterHandler(Case.StructureAddedSelf,s => {
+                if(s.UnitType == BlizzardConstants.Unit.RoachWarren)
                     _intelManager.PrimaryColony.DesiredVespeneWorkers = 6; // Increase vespene workers after the roach warren is added!
             });
-            
+
             // A variable needed since ZergDemo is a replaceable module relying on its on OnStart, but dont want it to be called twice
             _startCalled = true;
+            _done = false;
         }
 
         public void OnStep() {
-            // If the production queue is empty we have executed the hard-coded build order and should attack
-            if(!_intelManager.ProductionQueue.Any() && !_done) {
-                // Loop through all possible enemy starting locations
-                foreach(var colony in _eStarts) 
-                    // Queue an attack move command with _theGang on the point indicating the starting location
-                    _combatManager.AttackMove(_theGang,colony.Point,true);
-                _done = true;
-            }
+            if(_intelManager.GameLoop % 250 == 0 && _done)
+                KillEverything();
+            if(_intelManager.ProductionQueue.Any())
+                return;
+            if(_done)
+                return;
+
+            foreach(var colony in _eStarts)
+                _combatManager.AttackMove(_theGang,colony.Point,true);
+            _done = true;
+            QueueThemUp();
         }
 
         public void OnGameEnded() {}
@@ -90,13 +98,31 @@ namespace Launcher.Modules.Examples {
             _startCalled = false;
             _done = false;
         }
-        
+
         // Called by IntelManager, adds everything - expect overloads - to the Squad
-        public void UnitMadeHandler(IUnit u)
-        {
+        public void UnitMadeHandler(IUnit u) {
             // UnitType is a stable id of the Type of the unit. BlizzardConstants contains static variables to make it easy to find the specific id you need.
-            if (u.UnitType != BlizzardConstants.Unit.Overlord)
+            if(u.UnitType != BlizzardConstants.Unit.Overlord)
                 _theGang.AddUnit(u);
+        }
+
+        private void KillEverything() {
+            var target = _intelManager.StructuresEnemyVisible.FirstOrDefault();
+            if(target == null) {
+                foreach(var colony in _eStarts)
+                    _combatManager.AttackMove(_theGang,colony.Point,true);
+                foreach(var colony in _intelManager.Colonies)
+                    if(_theGang.Units.Any(u => u.Orders.Count == 0))
+                        _combatManager.AttackMove(_theGang,colony.Point,true);
+                return;
+            }
+            _combatManager.AttackMove(_theGang,target.Point);
+        }
+
+        private void QueueThemUp() {
+            for(int i = 0; i < 100; i++) {
+                _productionManager.QueueUnit(BlizzardConstants.Unit.Roach);
+            }
         }
 
         // This is an example of a complete hardcoded build order.
@@ -128,29 +154,6 @@ namespace Launcher.Modules.Examples {
             _productionManager.QueueUnit(BlizzardConstants.Unit.Ravager);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Overlord);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Roach);
-        }
-
-        // Method for saturating a colony
-        public void SaturateBase(IColony col) {
-            // Check if we known a Hatchery / Lair or Hive in the colony
-            var HQ = col.Structures.FirstOrDefault(u => GameConstants.IsHeadquarter(u.UnitType) && u.Alliance == Alliance.Self);
-            if (HQ == null) return;
-
-            // Count refineries
-            var refineries = col.Structures.Count(u => GameConstants.IsRefinery(u.UnitType) && u.Alliance == Alliance.Self);
-
-            // Calculate effective workers
-            var effectiveWorkers = col.Workers.Count + _intelManager.ProductionQueue.Count(u => u.UnitId == BlizzardConstants.Unit.Drone);
-
-            // Queue units needed
-            if (effectiveWorkers<(16+refineries*3)) {
-                _productionManager.QueueUnit(BlizzardConstants.Unit.Overlord);
-                _productionManager.QueueUnit(BlizzardConstants.Unit.Overlord);
-                for (int i = col.Workers.Count; i < 16+refineries*3; i++)
-                {
-                    _productionManager.QueueUnit(BlizzardConstants.Unit.Drone);
-                }
-            }
         }
     }
 }

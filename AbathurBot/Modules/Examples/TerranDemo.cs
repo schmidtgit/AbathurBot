@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Abathur.Constants;
 using Abathur.Core;
@@ -7,6 +6,7 @@ using Abathur.Core.Combat;
 using Abathur.Model;
 using Abathur.Modules;
 using Abathur.Repositories;
+using NydusNetwork.Model;
 
 namespace Launcher.Modules.Examples {
     // This demo runs best with the "AutoHarvestGather" module in the setup.json file!
@@ -21,24 +21,32 @@ namespace Launcher.Modules.Examples {
         private bool _startCalled;
         private bool _done;
 
+        private GameSettings _gameSettings;
+
         // Take required managers in the constructor, see FullModule for all possible managers.
-        public TerranDemo(IIntelManager intelManager,ICombatManager combatManager,IProductionManager productionManager,ISquadRepository squadRepo) {
+        public TerranDemo(IIntelManager intelManager,ICombatManager combatManager,IProductionManager productionManager,ISquadRepository squadRepo,GameSettings gamesettings) {
             _intelManager = intelManager;
             _combatManager = combatManager;
             _productionManager = productionManager;
             _squadRep = squadRepo;
+            _gameSettings = gamesettings;
         }
 
-        public void Initialize() { }
+        public void Initialize() {}
 
         public void OnStart() {
-            if(_startCalled) return;
+            if(_startCalled)
+                return;
+            _productionManager.ClearBuildOrder();
+
             // Colonies marked with starting location are possible starting locations of the enemy, never yourself
             _eStarts = _intelManager.Colonies.Where(c => c.IsStartingLocation);
+            _intelManager.Handler.RegisterHandler(Case.UnitAddedSelf,addCrook);
 
             QueueRaxRush();
 
             gang = _squadRep.Create("TheGang");
+            _done = false;
             _startCalled = true;
         }
 
@@ -50,12 +58,9 @@ namespace Launcher.Modules.Examples {
             if(_done)
                 return;
             
-            foreach(var crook in _intelManager.UnitsSelf())
-                gang.AddUnit(crook);
             foreach(var colony in _eStarts)
                 _combatManager.AttackMove(gang,colony.Point,true);
             _done = true;
-            Console.WriteLine("Queue'ing them up");
             QueueThemUp();
         }
 
@@ -72,12 +77,18 @@ namespace Launcher.Modules.Examples {
         /// Find a visible enemy structure and attack it.
         private void KillEverything() {
             var target = _intelManager.StructuresEnemyVisible.FirstOrDefault();
-            if(target == null)
+            if(target == null) {
+                foreach(var colony in _eStarts)
+                    _combatManager.AttackMove(gang,colony.Point,true);
+                foreach(var colony in _intelManager.Colonies)
+                    if(gang.Units.Any(u => u.Orders.Count == 0))
+                        _combatManager.AttackMove(gang,colony.Point,true);
                 return;
+            }
             _combatManager.AttackMove(gang,target.Point);
         }
 
-        public void OnGameEnded() { }
+        public void OnGameEnded() {}
 
         public void OnRestart() {
             _done = false;
@@ -85,13 +96,17 @@ namespace Launcher.Modules.Examples {
         }
 
         public void OnAdded() {
-            if (!_startCalled)
+            if(!_startCalled)
                 OnStart();
         }
 
         public void OnRemoved() {
             _done = false;
             _startCalled = false;
+        }
+
+        public void addCrook(IUnit u) {
+            gang.AddUnit(u);
         }
 
         /// Want to train yourself against a specific build order? Hardcode it and play against it.
@@ -115,7 +130,7 @@ namespace Launcher.Modules.Examples {
             _productionManager.QueueTech(BlizzardConstants.Research.CombatShield,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.Marauder,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.BarracksReactor,lowPriority: false);
-            _productionManager.QueueUnit(BlizzardConstants.Unit.OrbitalCommand,lowPriority: false);
+            //_productionManager.QueueUnit(BlizzardConstants.Unit.OrbitalCommand,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.BarracksReactor,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.SupplyDepot,lowPriority: false);
             _productionManager.QueueUnit(BlizzardConstants.Unit.SupplyDepot,lowPriority: false);
